@@ -20,42 +20,42 @@ def_ba_rank=taxid.getrank(def_ba_taxid)
 # Sample work flow for use
 
 #Stage 1 - basic genome QC filtering
-#example command:
 ```
 python QC_dataset.py -i input_data/Francisella_ncbi.zip -bm median -bp .1 -n 3 -d --gc_lower .3 --gc_upper .35 -se plasmid -on f_dataset_forqc_workflow -of zip -sd
 ```
-#filter inital set of genomes for quality. remove records that have too many Ns, have a weird %GC, or a label that would indicate bad quality or limited use for comparing different genomes like 'partial', 'hypothetical', 'plasmid', etc
+filter inital set of genomes for quality. remove records that have too many Ns, have a weird %GC, or a label that would indicate bad quality or limited use for comparing different genomes like 'partial', 'hypothetical', 'plasmid', etc
 
-#usage: QC Check - provide datasets zip, a multi fasta, or a directory of fasta files. Perform QC as desired. Output one of the three formats
-#       [-h] -i INPUT [-n N_FILTER] [-d] [--gc_lower GC_LOWER] [--gc_upper GC_UPPER] [-bm BIN_METHOD] [-bp BIN_PERCENTILE]
-#       [-si [STRINGS_TO_INCLUDE [STRINGS_TO_INCLUDE ...]]] [-se [STRINGS_TO_EXCLUDE [STRINGS_TO_EXCLUDE ...]]] -on OUTPUT_NAME [-of {fasta,directory,zip}] [-sd] [-r]
+```
+usage: QC Check - provide datasets zip, a multi fasta, or a directory of fasta files. Perform QC as desired. Output one of the three formats
+       [-h] -i INPUT [-n N_FILTER] [-d] [--gc_lower GC_LOWER] [--gc_upper GC_UPPER] [-bm BIN_METHOD] [-bp BIN_PERCENTILE]
+       [-si [STRINGS_TO_INCLUDE [STRINGS_TO_INCLUDE ...]]] [-se [STRINGS_TO_EXCLUDE [STRINGS_TO_EXCLUDE ...]]] -on OUTPUT_NAME [-of {fasta,directory,zip}] [-sd] [-r]
 
-#optional arguments:
-#  -h, --help            show this help message and exit
-#  -i INPUT, --input INPUT
-#                        NCBI Datasets zip file, multifasta file, or directory of fasta files to read in
-#  -n N_FILTER, --n_filter N_FILTER
-#                        input criteria for filtering by N characters in sequence. If a float, filters by that percent of Ns in sequence. If an integer, filters any
-#                        sequences with that many consecutive Ns. If "any", filter records containing any number of N
-#  -d, --degen_filter    flag if all records containing any degen characters should be filtered
-#  --gc_lower GC_LOWER   lower bound of GC content to be kept in sequences
-#  --gc_upper GC_UPPER   upper bound of GC content to be kept in sequences
-#  -bm BIN_METHOD, --bin_method BIN_METHOD
-#                        input criteria for filtering by N characters in sequence. Either "median" if binning should be done by median sequence length, or specify an
-#                        integer length
-#  -bp BIN_PERCENTILE, --bin_percentile BIN_PERCENTILE
-#                        float value for percent difference in length to cut off binning (+- 10 percent by default)
-#  -si [STRINGS_TO_INCLUDE [STRINGS_TO_INCLUDE ...]], --strings_to_include [STRINGS_TO_INCLUDE [STRINGS_TO_INCLUDE ...]]
-#                        An optional space-separated list of strings to filter inclusively
-#  -se [STRINGS_TO_EXCLUDE [STRINGS_TO_EXCLUDE ...]], --strings_to_exclude [STRINGS_TO_EXCLUDE [STRINGS_TO_EXCLUDE ...]]
-#                        An optional space-separated list of strings to filter exclusively
-#  -on OUTPUT_NAME, --output_name OUTPUT_NAME
-#                        What name should the output have
-#  -of {fasta,directory,zip}, --output_format {fasta,directory,zip}
-#                        Output format: fasta, directory, or zip.
-#  -sd, --save_drops     true or false to write out all filtered sequences
-#  -r, --refseq_only     keep only refseq type headers in output
-
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        NCBI Datasets zip file, multifasta file, or directory of fasta files to read in
+  -n N_FILTER, --n_filter N_FILTER
+                        input criteria for filtering by N characters in sequence. If a float, filters by that percent of Ns in sequence. If an integer, filters any
+                        sequences with that many consecutive Ns. If "any", filter records containing any number of N
+  -d, --degen_filter    flag if all records containing any degen characters should be filtered
+  --gc_lower GC_LOWER   lower bound of GC content to be kept in sequences
+  --gc_upper GC_UPPER   upper bound of GC content to be kept in sequences
+  -bm BIN_METHOD, --bin_method BIN_METHOD
+                        input criteria for filtering by N characters in sequence. Either "median" if binning should be done by median sequence length, or specify an
+                        integer length
+  -bp BIN_PERCENTILE, --bin_percentile BIN_PERCENTILE
+                        float value for percent difference in length to cut off binning (+- 10 percent by default)
+  -si [STRINGS_TO_INCLUDE [STRINGS_TO_INCLUDE ...]], --strings_to_include [STRINGS_TO_INCLUDE [STRINGS_TO_INCLUDE ...]]
+                        An optional space-separated list of strings to filter inclusively
+  -se [STRINGS_TO_EXCLUDE [STRINGS_TO_EXCLUDE ...]], --strings_to_exclude [STRINGS_TO_EXCLUDE [STRINGS_TO_EXCLUDE ...]]
+                        An optional space-separated list of strings to filter exclusively
+  -on OUTPUT_NAME, --output_name OUTPUT_NAME
+                        What name should the output have
+  -of {fasta,directory,zip}, --output_format {fasta,directory,zip}
+                        Output format: fasta, directory, or zip.
+  -sd, --save_drops     true or false to write out all filtered sequences
+  -r, --refseq_only     keep only refseq type headers in output
+```
 ### search for conserved kmers in target group
 ```
 python design/grna_inner_set.py -k 20 --seqs dataset.zip --pseq pamseq --pside 5prime/3prime -t threads -o outprefix
