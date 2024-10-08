@@ -1,14 +1,16 @@
 # QC-datasets
-
-# CasCADE
-
-Evaluate candidate gRNA for exclusivity
+Workflow to polish ncbi datasets .zip (and potentially and multifasta or folder of fastas) of undesirable genomes and even subsample for tractibility  
 
 ### conda environment setup:
 ```
-conda env create -f CasCADE.yml
-conda activate CasCADE
-pip install -r requirements.txt
+conda create -n qc_tool_dev_env_streamlit python=3.8 plotly pandas scipy umap-learn marisa-trie streamlit biopython sourmash -c conda-forge -c bioconda
+conda activate qc_tool_dev_env_streamlit
+pip install MRItaxonomy
+# then intialize the taxonomy database (only need to do once) by
+python
+from MRItaxonomy import accession2taxid,taxid
+#def_ba_taxid=accession2taxid.get_taxid('NC_007530.2')
+#def_ba_rank=taxid.getrank(def_ba_taxid)
 ```
 *Note that on some systems conda may not load library locations correctly for files like /lib/x86_64-linux-gnu/libstdc++.so.6: version `GLIBCXX_3.4.29', in that case you simply run ```export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"``` before using the environment to fix the issue
 
