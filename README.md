@@ -21,7 +21,7 @@ def_ba_rank=taxid.getrank(def_ba_taxid)
 
 #Stage 1 - basic genome QC filtering
 ```
-python QC_dataset.py -i input_data/Francisella_ncbi.zip -bm median -bp .1 -n 3 -d --gc_lower .3 --gc_upper .35 -se plasmid -on f_dataset_forqc_workflow -of zip -sd
+python QC_dataset.py -i input_data/Francisella_ncbi.zip -bm median -bp .1 -n 3 -d --gc_lower .3 --gc_upper .35 -se plasmid -on f_dataset_forqc_workflow -of directory -sd
 ```
 filter inital set of genomes for quality. remove records that have too many Ns, have a weird %GC, or a label that would indicate bad quality or limited use for comparing different genomes like 'partial', 'hypothetical', 'plasmid', etc
 
@@ -56,25 +56,88 @@ optional arguments:
   -sd, --save_drops     true or false to write out all filtered sequences
   -r, --refseq_only     keep only refseq type headers in output
 ```
-### search for conserved kmers in target group
-```
-python design/grna_inner_set.py -k 20 --seqs dataset.zip --pseq pamseq --pside 5prime/3prime -t threads -o outprefix
-```
-* -k is the size of conserved kmer to search for (default: 18)
-* --seqs is a directory containing sequence files or an ncbi datasets zip file containing sequence files
-* --pseq is the pam sequence i.e. TTTV for Cas12a, Note: TTTV, 5' above includes both pseq and pside arguments
-* --pside specifies if the pam occurs at the 5 or 3 prime side of the gRNA
-* -t is the number of threads to be used (NOTE: may not work if more threads are specified than records provided. Still under investigation.)
-* -o is the outprefix (also impacts naming within output file, ideally is descriptive of target group for record keeping)
-* -r optional reference genome (must be specified without output prefix)
-* --single_strand [forward, reverse] optionally should be passed forward or reverse depending on if targets should only be found on the forward or reverse strand (i.e. RNA target). Default is to consider both strands
-* -c is an optional argument to divide data into chunks before counting, and is useful in memory-limited scenarios
-* --pstrand currently does nothing, but in the future will support specifying if the PAM occurs on a particular strand
-* -p is the percent variance in reference length for replicon binning, and will be typically not passed and left at the default of .1
-* --split_records_size is the size to chunk larger records to in megabasepairs. When on eukaryotic organisms, try specifying --split_records_size 1
-* outputs a .tsv of the candidate designs and a .fasta of gRNA_kmers
 
-### OPTIONALLY: find k-mer hypergraph that covers entire sequence set
+#Stage 2 - setting up filter folder for further analysis
+
+only need to do this if -of is different than directory, and will need to process the output so that it looks like the output of directory
+
+#Stage 3A - use sourmash to produce a distance matrix (.npz file), that can be used with umap to cluster records based on sequence properties
+
+after making sure sourmash is working correctly, get initial distance matrix to be used later in clustering
+
 ```
-python design/grna_hypergraph_complete.py -k 20 --seqs sequences_to_consider
+cd f_dataset_forqc_workflow/
+for fil in *fna;do sourmash sketch dna -p k=31,scaled=100,noabund $fil ; done
+cd ..
+sourmash compare --processes 20 --distance-matrix --ksize 31 --dna --scaled 100 f_dataset_forqc_workflow/*.sig -o f-dataset-comparison-matrix.npz
+cd $fol
 ```
+see sourmash documentation for more details if you wish the understadn all the options in makind the distacen matrix
+
+#Stage 3B - taxonomy roll up for records, to allow for labeling by taxid, rank, etc.
+
+here is where the taxonomy metadata is labeled onto the seqs
+
+```
+time python gettaxonomyfororgs.py -d f_dataset_forqc_workflow/
+```
+```
+usage: gettaxonomyfororgs.py [-h] -d DIRECTORY
+
+Process FASTA files in a folder of folders.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DIRECTORY, --directory DIRECTORY
+                        The path to the directory of directories containing FASTA files.
+```
+
+
+#Stage 4 -  after all preprocessing is done, use the inforamtion to generate a umap representation of clustering
+
+Doing an init run of this script can also initial view the records clustered by initial taxid each accession is assigned to, 
+always will then make a umap of the records, using the distances provided by sourmash and produced by cutting clusters that differ more than the treshold -t
+
+Note: for now always do a init run with the -i flag
+
+```
+python clustersourmashresults.py -d f_dataset_forqc_workflow/ncbi_dataset/data/f-dataset-comparison-matrix.npz -m f_dataset_forqc_workflow_taxonomy.csv  -t 1.0 -i
+```
+```
+usage: clustersourmashresults.py [-h] -d DIST_MATRIX -m TAXONOMY_METADATA -t THRESHOLD [-i]
+
+Cluster sequences based on a similarity matrix.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DIST_MATRIX, --dist_matrix DIST_MATRIX
+                        Path to the file containing the similarity matrix.
+  -m TAXONOMY_METADATA, --taxonomy_metadata TAXONOMY_METADATA
+                        Path to the file containing the similarity matrix.
+  -t THRESHOLD, --threshold THRESHOLD
+                        Similarity threshold for clustering.
+  -i, --inital_view     flag if you wish to see the umap of the original labels by taxid
+```
+#Stage 5 - run subsampling to maintain as much variability in the sequences while minimizing total sequence amount retained
+
+```
+python  data_utils/workflowforatds/subsetselectionbasedoncluster.py -f taxonomic_sequence_cluster.tsv -n 20
+```
+```
+usage: subsetselectionbasedoncluster.py [-h] -f FILEPATH -n NUM_REPRESENTATIVES [-s SELECTION_PROCEDURE] [-d DATA_CORRECTION_METHOD]
+
+Load a TSV file and select cluster representatives.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f FILEPATH, --filepath FILEPATH
+                        The filepath to the TSV file.
+  -n NUM_REPRESENTATIVES, --num_representatives NUM_REPRESENTATIVES
+                        Number of representatives for each taxid in each cluster.
+  -s SELECTION_PROCEDURE, --selection_procedure SELECTION_PROCEDURE
+                        Procedure to select cluster representatives.
+  -d DATA_CORRECTION_METHOD, --data_correction_method DATA_CORRECTION_METHOD
+                        method to deal with presumably incorrectly labeled genomes.
+
+```
+
